@@ -9,16 +9,16 @@ float rec_vel_x;
 float rec_vel_y;
 //float rec_ang_z;
 float base_vel;
-int base_vel_int;
+//int base_vel_int;
 float base_angle;
 int base_angle_int;
 //std::stringstream vel_send;
 //std::stringstream ang_send;
 cereal::CerealPort device;
-char vel_send[5];
-char ang_send[5];
+//char vel_send[5];
+char ang_send[1];
 int flag = 0;
-int old_base_vel_int = 0;
+//int old_base_vel_int = 0;
 int old_base_angle_int = 0;
 /**
  * This tutorial demonstrates simple receipt of messages over the ROS system.
@@ -30,16 +30,25 @@ void cmd_vel_Callback(const geometry_msgs::Twist::ConstPtr& msg)
 	rec_vel_x = msg->linear.x;
 	rec_vel_y = msg->linear.y;
 	//rec_ang_z = msg->angular.z;
-	temp_val = (rec_vel_x*rec_vel_x) + (rec_vel_y*rec_vel_y);
+	/*temp_val = (rec_vel_x*rec_vel_x) + (rec_vel_y*rec_vel_y);
 	base_vel = sqrt(temp_val);
 	if(base_vel >=0.0)
 	{
 		base_vel*=100;		
 		//base_vel_int = 45.0;
 		base_vel_int = (int) (base_vel+ 0.5);
+	}*/
+	if(rec_vel_x == 0 && rec_vel_y ==0)
+	{
+		ang_send[0]='x';
+		base_vel = 0.0;
+		base_angle_int = 0;
 	}
-	base_angle = atan2(rec_vel_y,rec_vel_x)*180/PI;
-	if(base_angle >=0.0 && base_angle<90.0)
+	if (rec_vel_x !=0 && rec_vel_y !=0) 
+	{
+		base_angle = atan2(rec_vel_y,rec_vel_x)*180/PI;
+	}
+	if(base_angle >0.0 && base_angle<90.0)
 	{	
 		base_angle = 45.0;
 		base_angle_int = (int) (base_angle+ 0.5);
@@ -70,7 +79,7 @@ void cmd_vel_Callback(const geometry_msgs::Twist::ConstPtr& msg)
 
 
 	/* to set format as required by mbed*/
-	if(base_vel_int<=9)
+	/*if(base_vel_int<=9)
     	{
 		vel_send[0]='v';
 		vel_send[1]='0'+base_vel_int;
@@ -97,50 +106,52 @@ void cmd_vel_Callback(const geometry_msgs::Twist::ConstPtr& msg)
                 vel_send[2]='0'+((base_vel_int/10)%10);
                 vel_send[3]='0'+(base_vel_int%10);
                 vel_send[4]=' ';
-	}
+	}*/
 //	ROS_INFO("vel send %d\n",base_vel_int);
 	//device.write(vel_send,5);
-	 if(base_angle_int<=9)
+	 if(base_angle_int == 90 )
        // {ang_send<<"a"<<base_angle<<"   ";}
           {
-                ang_send[0]='a';
-                ang_send[1]='0'+base_angle_int;
-                ang_send[2]=' ';
-                ang_send[3]=' ';
-                ang_send[4]=' ';
+               ang_send[0] ='z';
+		base_vel = 0.55;
         }
 
-	if(base_angle_int>=10 && base_angle_int<=99)
+	if(base_angle_int = 45)
        // {ang_send<<"a"<<base_angle<<"  ";}
            {
-                ang_send[0]='a';
+               /* ang_send[0]='a';
                 ang_send[1]='0'+(base_angle_int/10);
                 ang_send[2]='0'+(base_angle_int%10);
                 ang_send[3]=' ';
-                ang_send[4]=' ';
+                ang_send[4]=' ';*/
+		ang_send[0] ='a';
+		base_vel = 0.3;
+
         }
 
 
-	if(base_angle_int>99)
+	if(base_angle_int= 135)
         // {ang_send<<"a"<<base_angle<<" ";}
 	{
-                ang_send[0]='a';
+               /* ang_send[0]='a';
                 ang_send[1]='0'+(base_angle_int/100);
                 ang_send[2]='0'+((base_angle_int/10)%10);
                 ang_send[3]='0'+(base_angle_int%10);
-                ang_send[4]=' ';
+                ang_send[4]=' ';*/
+		ang_send[0] ='s';
+		base_vel = 0.3;
         }
 	
 
-	if (flag == 0 || (old_base_vel_int != base_vel_int) || (old_base_angle_int != base_angle_int) ) 
+	if (flag == 0 || (old_base_angle_int != base_angle_int) ) 
 	{ 
-	ROS_INFO("vel send %d\n",base_vel_int);
-        device.write(vel_send,5);
+	//ROS_INFO("vel send %d\n",base_vel_int);
+        //device.write(vel_send,5);
 	
-	ROS_INFO("angle written %d\n",base_angle_int);
-	device.write(ang_send,5);
+	//ROS_INFO("angle written %d\n",base_angle_int);
+	device.write(ang_send,1);
 	flag =1;
-	old_base_vel_int = base_vel_int;
+	//old_base_vel_int = base_vel_int;
 	old_base_angle_int = base_angle_int;
 	}
 
@@ -184,8 +195,8 @@ int main(int argc, char **argv)
 	float temp;
 	temp = PI*base_angle_int;
 	to_pub_ang = temp/180;
-	to_pub_velx = (base_vel_int/100)*cos(to_pub_ang);
-	to_pub_vely = (base_vel_int/100)*sin(to_pub_ang);
+	to_pub_velx = base_vel*cos(to_pub_ang);
+	to_pub_vely = base_vel*sin(to_pub_ang);
 	vel.linear.x = to_pub_velx; 
 	vel.linear.y = to_pub_vely;
 	
